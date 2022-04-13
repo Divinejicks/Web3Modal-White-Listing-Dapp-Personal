@@ -54,6 +54,7 @@ function App() {
     if(web3Modal && web3Modal.cachedProvider){
       connectWallet()
     }
+    getNumberWhiteListedAddress()
   }, [web3Modal])
 
   const clearCachedProvider = () => {
@@ -187,9 +188,9 @@ function App() {
           </button>
           <p>WhiteListed addresses are: {renderWhiteListedAddresses()}</p>
 
-          <button onClick={getNumberWhiteListedAddress}>
+          {/* <button onClick={getNumberWhiteListedAddress}>
             Get number whitelisted addresses
-          </button>
+          </button> */}
           <p>Number of WhiteListed address is: {numberOfWhiteListedAddress}/2</p>
 
           {/* <button onClick={getOwner}>
