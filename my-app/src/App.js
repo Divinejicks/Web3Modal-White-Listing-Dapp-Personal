@@ -5,11 +5,17 @@ import Web3Modal from "web3modal";
 import { ethers } from 'ethers';
 import { useState, useEffect } from 'react';
 import Authereum from "authereum";
+import {abi, whiteList_Contract_Address} from "./constants/constants";
 
 
 function App() {
   const [web3Modal, setWeb3Modal] = useState(null);
   const [address, setAddress] = useState("")
+  const [walletConnected, setWalletConnected] = useState(false);
+  const [whiteListedAddress, setWhiteListedAddresses] = useState("");
+  const [numberOfWhiteListedAddress, setNumberOfWhiteListedAddress] = useState(0);
+ /*  const [ownerAddress, setOwnerAddress] = useState("");
+  const [msgSender, setMsgSender] = useState(""); */
 
   useEffect(() => {
     const providerOptions = { 
@@ -33,7 +39,7 @@ function App() {
 
     const newWeb3Modal = new Web3Modal({
       network: "rinkeby",
-      cacheProvider: false,
+      cacheProvider: true,
       disableInjectedProvider: false,
       providerOptions
     });
@@ -43,17 +49,23 @@ function App() {
 
 
   //if cachedProvider is set to true, this function will be usefull
-  /* useEffect(() => {
+  useEffect(() => {
     // connect automatically and without a popup if user is already connected
     if(web3Modal && web3Modal.cachedProvider){
       connectWallet()
     }
-  }, [web3Modal]) */
+  }, [web3Modal])
 
+  const clearCachedProvider = () => {
+    if(web3Modal && web3Modal.cachedProvider){
+      web3Modal.clearCachedProvider()
+    }
+  }
 
   const connectWallet = async () => {
     try{
       await getProviderOrSigner();
+      setWalletConnected(true);
     }catch(err) {
       console.log(err)
     }
@@ -79,6 +91,65 @@ function App() {
     return provider;
   }
 
+  const addToWhiteList = async () => {
+    const signer = await getProviderOrSigner(true);
+    const whiteListContract = new ethers.Contract(
+      whiteList_Contract_Address,
+      abi,
+      signer
+    );
+    const tx = await whiteListContract.addAddressToWhiteList()
+    await tx.wait();
+  }
+
+  const getWhiteListedAddress = async () => {
+    const signer = await getProviderOrSigner(true); //we are using the signer here because we want to check against the owner else it will send the zeroth address
+    const whiteListContract = new ethers.Contract(
+      whiteList_Contract_Address,
+      abi,
+      signer
+    );
+    const whitelistedAddresses = await whiteListContract.getAllWhiteListedAddress();
+      setWhiteListedAddresses(whitelistedAddresses);
+  }
+
+  const getNumberWhiteListedAddress = async () => {
+    const provider = await getProviderOrSigner();
+    const whiteListContract = new ethers.Contract(
+      whiteList_Contract_Address,
+      abi,
+      provider
+    );
+    
+    const num = await whiteListContract.getNumberOfWhiteListedAddresses();
+    setNumberOfWhiteListedAddress(num.toNumber())
+  }
+
+  /* const getOwner = async () => {
+    const provider = await getProviderOrSigner();
+    const whiteListContract = new ethers.Contract(
+      whiteList_Contract_Address,
+      abi,
+      provider
+    );
+    
+    const owner = await whiteListContract.getOwner();
+    setOwnerAddress(owner);
+  }
+
+
+  const getMsgSender = async () => {
+    const provider = await getProviderOrSigner(true);
+    const whiteListContract = new ethers.Contract(
+      whiteList_Contract_Address,
+      abi,
+      provider
+    );
+    
+    const owner = await whiteListContract.getMsgSender();
+    setMsgSender(owner);
+  } */
+
   const addListeners = async (web3ModalProvider) => {
     web3ModalProvider.on("accountsChanged", (accounts) => {
       window.location.reload()
@@ -94,12 +165,66 @@ function App() {
     });
   }
 
+  const renderButton = () => {
+    if(!walletConnected) {
+      return (
+        <>
+          <button onClick={connectWallet}>Connect wallet</button>
+          <button onClick={clearCachedProvider}>Clear Cached Provider</button>
+        </>
+      )
+    } 
+    else {
+      return (
+        <>
+          <p>Wallet connected on the address {address}</p>
+          <button onClick={addToWhiteList}>
+            Add Address To WhiteList
+          </button>
+          <br />
+          <button onClick={getWhiteListedAddress}>
+            Get whitelisted addresses
+          </button>
+          <p>WhiteListed addresses are: {renderWhiteListedAddresses()}</p>
+
+          <button onClick={getNumberWhiteListedAddress}>
+            Get number whitelisted addresses
+          </button>
+          <p>Number of WhiteListed address is: {numberOfWhiteListedAddress}/2</p>
+
+          {/* <button onClick={getOwner}>
+            Get Owner
+          </button>
+          <p>Owner's address is: {ownerAddress}</p>
+
+          <button onClick={getMsgSender}>
+            Get Msg Sender
+          </button>
+          <p>MsgSender's address is: {msgSender}</p> */}
+        </>
+      )
+    }
+  }
+
+  const renderWhiteListedAddresses = () => {
+    if(whiteListedAddress !== ""){
+      let items = [];
+      for(var i = 0; i < whiteListedAddress.length; i++) {
+        items.push(<li key={whiteListedAddress[i]}>{whiteListedAddress[i]}</li>)
+      }
+      return(
+        <>
+          {items}
+        </>
+      )
+    }
+  }
+
   return (
     <div className="App">
       <header className="App-header">
         <p>Connect to web3 modal</p>
-        <button onClick={connectWallet}>Connect wallet</button>
-        <p>{address}</p>
+        {renderButton()}
       </header>
     </div>
   );

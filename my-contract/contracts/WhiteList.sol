@@ -26,6 +26,18 @@ contract WhiteList {
         return allWhiteListedAddresses;
     }
 
+    function getNumberOfWhiteListedAddresses() public view returns(uint){
+        return allWhiteListedAddresses.length;
+    }
+
+    function getOwner() external view returns(address){
+        return owner;
+    }
+
+    function getMsgSender() external view returns(address){
+        return msg.sender;
+    }
+
     modifier onlyOwner() {
         require(msg.sender == owner, "Only the Owner can do this");
         _;
