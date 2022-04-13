@@ -53,8 +53,8 @@ function App() {
     // connect automatically and without a popup if user is already connected
     if(web3Modal && web3Modal.cachedProvider){
       connectWallet()
+      getNumberWhiteListedAddress()
     }
-    getNumberWhiteListedAddress()
   }, [web3Modal])
 
   const clearCachedProvider = () => {
